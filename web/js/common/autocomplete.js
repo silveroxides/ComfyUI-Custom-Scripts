@@ -501,12 +501,18 @@ export class TextAreaAutoComplete {
 		const includesMatches = [];
 		for (const word of Object.keys(this.words)) {
 			const lowerWord = word.toLocaleLowerCase();
-			if (lowerWord === term) {
+			const lowerWordSpaces = lowerWord.replaceAll("_", " ");
+
+			if (lowerWord === term || lowerWordSpaces === term) {
 				// Dont include exact matches
 				continue;
 			}
 
-			const pos = lowerWord.indexOf(term);
+			let pos = lowerWord.indexOf(term);
+			if (pos === -1) {
+				pos = lowerWordSpaces.indexOf(term);
+			}
+
 			if (pos === -1) {
 				// No match
 				continue;
@@ -515,7 +521,7 @@ export class TextAreaAutoComplete {
 			const wordInfo = this.words[word];
 			if (wordInfo.priority) {
 				priorityMatches.push({ pos, wordInfo });
-			} else if (pos) {
+			} else if (pos !== -1 && pos !== 0) {
 				includesMatches.push({ pos, wordInfo });
 			} else {
 				prefixMatches.push({ pos, wordInfo });
@@ -536,11 +542,9 @@ export class TextAreaAutoComplete {
 	#update() {
 		let before = this.helper.getBeforeCursor();
 		if (before?.length) {
-			const m = before.match(/([^,;"|{}()\n]+)$/);
+			const m = before.match(/([^,;"|{}()\n.<>]+)$/);
 			if (m) {
-				before = m[0]
-					.replace(/^\s+/, "")
-					.replace(/\s/g, "_") || null;
+				before = m[0].replace(/^\s+/, "") || null;
 			} else {
 				before = null;
 			}
